@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Device Orientation Data Recorder</title>
+    <title>Device Motion Data Recorder</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -24,8 +24,8 @@
     </style>
 </head>
 <body>
-    <h1>Device Orientation Data Recorder</h1>
-    <p>Click the "Start Recording" button to record device orientation data for 5 minutes.</p>
+    <h1>Device Motion Data Recorder</h1>
+    <p>Click the "Start Recording" button to record device motion data (x, y, z) for 5 minutes.</p>
 
     <button id="startButton">Start Recording</button>
     <button id="downloadButton" disabled>Download CSV</button>
@@ -49,26 +49,30 @@
             recording = true;
             dataDisplay.textContent = "Recording data...";
 
-            window.addEventListener("deviceorientation", handleOrientation);
+            window.addEventListener("devicemotion", handleMotion);
 
             timer = setTimeout(() => {
                 stopRecording();
             }, 5 * 60 * 1000); // Stop after 5 minutes
         });
 
-        function handleOrientation(event) {
+        function handleMotion(event) {
             const timestamp = new Date().toISOString();
+            const acceleration = event.acceleration;
             const record = {
                 timestamp,
-                alpha: event.alpha ? event.alpha.toFixed(3) : "null",
-                beta: event.beta ? event.beta.toFixed(3) : "null",
-                gamma: event.gamma ? event.gamma.toFixed(3) : "null"
+                x: acceleration.x ? acceleration.x.toFixed(3) : "null",
+                y: acceleration.y ? acceleration.y.toFixed(3) : "null",
+                z: acceleration.z ? acceleration.z.toFixed(3) : "null"
             };
             data.push(record);
+
+            // Log data to console for debugging
+            console.log(record);
         }
 
         function stopRecording() {
-            window.removeEventListener("deviceorientation", handleOrientation);
+            window.removeEventListener("devicemotion", handleMotion);
             clearTimeout(timer);
             recording = false;
             dataDisplay.textContent = JSON.stringify(data, null, 2);
@@ -77,8 +81,8 @@
 
         downloadButton.addEventListener("click", () => {
             const csvContent = [
-                "timestamp,alpha,beta,gamma",
-                ...data.map(row => `${row.timestamp},${row.alpha},${row.beta},${row.gamma}`)
+                "timestamp,x,y,z",
+                ...data.map(row => `${row.timestamp},${row.x},${row.y},${row.z}`)
             ].join("\n");
 
             const blob = new Blob([csvContent], { type: "text/csv" });
@@ -86,7 +90,7 @@
 
             const a = document.createElement("a");
             a.href = url;
-            a.download = "device_orientation_data.csv";
+            a.download = "device_motion_data.csv";
             a.click();
 
             URL.revokeObjectURL(url);
