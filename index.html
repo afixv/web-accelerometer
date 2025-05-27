@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Orientation Data Recorder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+        }
+        button {
+            margin: 10px 0;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        pre {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 10px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Device Orientation Data Recorder</h1>
+    <p>Click the "Start Recording" button to record device orientation data for 5 minutes.</p>
+
+    <button id="startButton">Start Recording</button>
+    <button id="downloadButton" disabled>Download CSV</button>
+
+    <h2>Recorded Data:</h2>
+    <pre id="dataDisplay">No data recorded yet.</pre>
+
+    <script>
+        let recording = false;
+        let data = [];
+        let timer;
+
+        const startButton = document.getElementById("startButton");
+        const downloadButton = document.getElementById("downloadButton");
+        const dataDisplay = document.getElementById("dataDisplay");
+
+        startButton.addEventListener("click", () => {
+            if (recording) return;
+
+            data = [];
+            recording = true;
+            dataDisplay.textContent = "Recording data...";
+
+            window.addEventListener("deviceorientation", handleOrientation);
+
+            timer = setTimeout(() => {
+                stopRecording();
+            }, 5 * 60 * 1000); // Stop after 5 minutes
+        });
+
+        function handleOrientation(event) {
+            const timestamp = new Date().toISOString();
+            const record = {
+                timestamp,
+                alpha: event.alpha ? event.alpha.toFixed(3) : "null",
+                beta: event.beta ? event.beta.toFixed(3) : "null",
+                gamma: event.gamma ? event.gamma.toFixed(3) : "null"
+            };
+            data.push(record);
+        }
+
+        function stopRecording() {
+            window.removeEventListener("deviceorientation", handleOrientation);
+            clearTimeout(timer);
+            recording = false;
+            dataDisplay.textContent = JSON.stringify(data, null, 2);
+            downloadButton.disabled = false;
+        }
+
+        downloadButton.addEventListener("click", () => {
+            const csvContent = [
+                "timestamp,alpha,beta,gamma",
+                ...data.map(row => `${row.timestamp},${row.alpha},${row.beta},${row.gamma}`)
+            ].join("\n");
+
+            const blob = new Blob([csvContent], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "device_orientation_data.csv";
+            a.click();
+
+            URL.revokeObjectURL(url);
+        });
+    </script>
+</body>
+</html>
