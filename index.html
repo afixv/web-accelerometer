@@ -11,7 +11,7 @@
             padding: 0;
         }
         button {
-            margin: 10px 0;
+            margin: 10px 10px 10px 0;
             padding: 10px 20px;
             font-size: 16px;
         }
@@ -25,9 +25,10 @@
 </head>
 <body>
     <h1>Device Motion Data Recorder</h1>
-    <p>Click the "Start Recording" button to record device motion data (x, y, z) for 5 minutes.</p>
+    <p>Use "Start Recording" and "Stop Recording" buttons to manage the recording process manually.</p>
 
     <button id="startButton">Start Recording</button>
+    <button id="stopButton" disabled>Stop Recording</button>
     <button id="downloadButton" disabled>Download CSV</button>
 
     <h2>Recorded Data:</h2>
@@ -36,9 +37,9 @@
     <script>
         let recording = false;
         let data = [];
-        let timer;
 
         const startButton = document.getElementById("startButton");
+        const stopButton = document.getElementById("stopButton");
         const downloadButton = document.getElementById("downloadButton");
         const dataDisplay = document.getElementById("dataDisplay");
 
@@ -48,12 +49,16 @@
             data = [];
             recording = true;
             dataDisplay.textContent = "Recording data...";
+            startButton.disabled = true;
+            stopButton.disabled = false;
 
             window.addEventListener("devicemotion", handleMotion);
+        });
 
-            timer = setTimeout(() => {
-                stopRecording();
-            }, 5 * 60 * 1000); // Stop after 5 minutes
+        stopButton.addEventListener("click", () => {
+            if (!recording) return;
+
+            stopRecording();
         });
 
         function handleMotion(event) {
@@ -67,15 +72,15 @@
             };
             data.push(record);
 
-            // Log data to console for debugging
-            console.log(record);
+            // Log data in the display area
+            dataDisplay.textContent = JSON.stringify(data, null, 2);
         }
 
         function stopRecording() {
             window.removeEventListener("devicemotion", handleMotion);
-            clearTimeout(timer);
             recording = false;
-            dataDisplay.textContent = JSON.stringify(data, null, 2);
+            startButton.disabled = false;
+            stopButton.disabled = true;
             downloadButton.disabled = false;
         }
 
